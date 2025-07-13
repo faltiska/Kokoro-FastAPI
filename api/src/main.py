@@ -56,19 +56,15 @@ async def lifespan(app: FastAPI):
     try:
         # Initialize managers
         model_manager = await get_manager()
-        voice_manager = await get_voice_manager()
 
         # Initialize model with warmup and get status
-        device, model, voicepack_count = await model_manager.initialize_with_warmup(
-            voice_manager
-        )
-
+        device, model, load_time = await model_manager.initialize_and_load_model()
     except Exception as e:
         logger.error(f"Failed to initialize model: {e}")
         raise
 
     boundary = "░" * 2 * 12
-    startup_msg = f"""
+    logger.info(f"""
 
 {boundary}
 
@@ -80,27 +76,18 @@ async def lifespan(app: FastAPI):
     ╩ ╩└─┘┴ ┴└─┘
 
 {boundary}
-                """
-    startup_msg += f"\nModel warmed up on {device}: {model}"
-    if device == "mps":
-        startup_msg += "\nUsing Apple Metal Performance Shaders (MPS)"
-    elif device == "cuda":
-        startup_msg += f"\nCUDA: {torch.cuda.is_available()}"
-    else:
-        startup_msg += "\nRunning on CPU"
-    startup_msg += f"\n{voicepack_count} voice packs loaded"
+                \n""")
 
-    # Add web player info if enabled
+    startup_msg = f"Model {model} loaded on {device} in {load_time}ms."
+    if device == "cuda" and torch.cuda.is_available():
+        logger.info(f"{startup_msg} CUDA available.\n")
+    else:
+        logger.error(f"{startup_msg} CUDA unavailable.\n")
+
     if settings.enable_web_player:
-        startup_msg += (
-            f"\n\nBeta Web Player: http://{settings.host}:{settings.port}/web/"
-        )
-        startup_msg += f"\nor http://localhost:{settings.port}/web/"
+        logger.info(f"Web Player: http://{settings.host}:{settings.port}/web/ or http://localhost:{settings.port}/web/\n")
     else:
-        startup_msg += "\n\nWeb Player: disabled"
-
-    startup_msg += f"\n{boundary}\n"
-    logger.info(startup_msg)
+        logger.info("Web Player: disabled\n")
 
     yield
 

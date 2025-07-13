@@ -7,8 +7,9 @@ $Env:PYTHONPATH="$Env:PROJECT_ROOT;$Env:PROJECT_ROOT/api"
 $Env:MODEL_DIR="src/models"
 $Env:VOICES_DIR="src/voices/v1_0"
 $Env:WEB_PLAYER_PATH="$Env:PROJECT_ROOT/web"
-$Env:UVICORN_LOG_LEVEL="warning"
-$Env:LOGURU_LEVEL="WARNING"
+
+$Env:UVICORN_LOG_LEVEL="info"
+$Env:LOGURU_LEVEL="INFO"
 
 uv pip install -e ".[gpu]"
 uv run --no-sync python docker/scripts/download_model.py --output api/src/models/v1_0

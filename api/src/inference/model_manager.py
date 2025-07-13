@@ -4,7 +4,6 @@ from typing import Optional
 
 from loguru import logger
 
-from ..core import paths
 from ..core.config import settings
 from ..core.model_config import ModelConfig, model_config
 from .base import BaseModelBackend
@@ -41,14 +40,11 @@ class ModelManager:
         except Exception as e:
             raise RuntimeError(f"Failed to initialize Kokoro V1: {e}")
 
-    async def initialize_with_warmup(self, voice_manager) -> tuple[str, str, int]:
+    async def initialize_and_load_model(self) -> tuple[str, str, int]:
         """Initialize and warm up model.
 
-        Args:
-            voice_manager: Voice manager instance for warmup
-
         Returns:
-            Tuple of (device, backend type, voice count)
+            Tuple of (device, model)
 
         Raises:
             RuntimeError: If initialization fails
@@ -65,25 +61,9 @@ class ModelManager:
             model_path = self._config.pytorch_kokoro_v1_file
             await self.load_model(model_path)
 
-            # Use paths module to get voice path
-            try:
-                voices = await paths.list_voices()
-                voice_path = await paths.get_voice_path(settings.default_voice)
-
-                # Warm up with short text
-                warmup_text = "Warmup text for initialization."
-                # Use default voice name for warmup
-                voice_name = settings.default_voice
-                logger.debug(f"Using default voice '{voice_name}' for warmup")
-                async for _ in self.generate(warmup_text, (voice_name, voice_path)):
-                    pass
-            except Exception as e:
-                raise RuntimeError(f"Failed to get default voice: {e}")
-
             ms = int((time.perf_counter() - start) * 1000)
-            logger.info(f"Warmup completed in {ms}ms")
 
-            return self._device, "kokoro_v1", len(voices)
+            return self._device, "kokoro_v1", ms
         except FileNotFoundError as e:
             logger.error("""
 Model files not found! You need to download the Kokoro V1 model:
