@@ -43,7 +43,7 @@ ENV PATH="/app/.venv/bin:$PATH" \
     DOWNLOAD_MODEL=true \
     UVICORN_LOG_LEVEL=warning \
     LOGURU_LEVEL=WARNING \
-    NUM_WORKERS=2
+    NUM_WORKERS=3
 
 # Download model if enabled
 RUN if [ "$DOWNLOAD_MODEL" = "true" ]; then \
