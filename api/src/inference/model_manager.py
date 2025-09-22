@@ -41,14 +41,11 @@ class ModelManager:
         except Exception as e:
             raise RuntimeError(f"Failed to initialize Kokoro V1: {e}")
 
-    async def initialize_with_warmup(self, voice_manager) -> tuple[str, str, int]:
-        """Initialize and warm up model.
-
-        Args:
-            voice_manager: Voice manager instance for warmup
+    async def initialize_and_load_model(self) -> tuple[str, str]:
+        """Initialize and load model.
 
         Returns:
-            Tuple of (device, backend type, voice count)
+            Tuple of (device, backend type)
 
         Raises:
             RuntimeError: If initialization fails
@@ -65,39 +62,13 @@ class ModelManager:
             model_path = self._config.pytorch_kokoro_v1_file
             await self.load_model(model_path)
 
-            # Use paths module to get voice path
-            try:
-                voices = await paths.list_voices()
-                voice_path = await paths.get_voice_path(settings.default_voice)
-
-                # Warm up with short text
-                warmup_text = "Warmup text for initialization."
-                # Use default voice name for warmup
-                voice_name = settings.default_voice
-                logger.debug(f"Using default voice '{voice_name}' for warmup")
-                async for _ in self.generate(warmup_text, (voice_name, voice_path)):
-                    pass
-            except Exception as e:
-                raise RuntimeError(f"Failed to get default voice: {e}")
-
             ms = int((time.perf_counter() - start) * 1000)
             logger.info(f"Warmup completed in {ms}ms")
 
-            return self._device, "kokoro_v1", len(voices)
-        except FileNotFoundError as e:
-            logger.error("""
-Model files not found! You need to download the Kokoro V1 model:
-
-1. Download model using the script:
-   python docker/scripts/download_model.py --output api/src/models/v1_0
-
-2. Or set environment variable in docker-compose:
-   DOWNLOAD_MODEL=true
-""")
-            exit(0)
+            return self._device, "kokoro_v1"
         except Exception as e:
-            raise RuntimeError(f"Warmup failed: {e}")
-
+            raise RuntimeError(f"Initialization failed.") from e
+        
     def get_backend(self) -> BaseModelBackend:
         """Get initialized backend.
 

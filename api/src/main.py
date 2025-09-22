@@ -59,9 +59,7 @@ async def lifespan(app: FastAPI):
         voice_manager = await get_voice_manager()
 
         # Initialize model with warmup and get status
-        device, model, voicepack_count = await model_manager.initialize_with_warmup(
-            voice_manager
-        )
+        device, model  = await model_manager.initialize_and_load_model()
 
     except Exception as e:
         logger.error(f"Failed to initialize model: {e}")
@@ -81,14 +79,13 @@ async def lifespan(app: FastAPI):
 
 {boundary}
                 """
-    startup_msg += f"\nModel warmed up on {device}: {model}"
+    startup_msg += f"\nModel {model} loaded on {device}."
     if device == "mps":
         startup_msg += "\nUsing Apple Metal Performance Shaders (MPS)"
     elif device == "cuda":
-        startup_msg += f"\nCUDA: {torch.cuda.is_available()}"
+        startup_msg += f"\nCUDA available: {torch.cuda.is_available()}"
     else:
         startup_msg += "\nRunning on CPU"
-    startup_msg += f"\n{voicepack_count} voice packs loaded"
 
     # Add web player info if enabled
     if settings.enable_web_player:
