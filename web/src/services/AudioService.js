@@ -33,14 +33,15 @@ export class AudioService {
             
             console.log('AudioService: Making API call...', { text, voice, speed });
             
+            const audio_format = document.getElementById('format-select').value || 'mp3'
             const response = await fetch('/v1/audio/speech', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     input: text,
                     voice: voice,
-                    response_format: 'mp3', // Always use mp3 for streaming playback
-                    download_format: document.getElementById('format-select').value || 'mp3', // Format for final download
+                    response_format: audio_format,
+                    download_format: audio_format,
                     stream: true,
                     speed: speed,
                     return_download_link: true,

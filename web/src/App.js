@@ -56,6 +56,13 @@ export class App {
     }
 
     setupEventListeners() {
+        this.elements.formatSelect.addEventListener('change', () => {
+            if (this.elements.autoplayToggle.checked && this.elements.formatSelect.value != 'mp3') {
+                this.elements.autoplayToggle.checked = false
+                this.showStatus('Auto-play only supported for mp3', 'info');
+            }
+        });
+
         // Generate button
         this.elements.generateBtn.addEventListener('click', () => this.generateSpeech());
 
