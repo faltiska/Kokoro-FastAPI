@@ -51,8 +51,11 @@ class StreamingAudioWriter:
                     layout="mono" if self.channels == 1 else "stereo",
                 )
                 # Set bit_rate only for codecs where it's applicable and useful
-                if self.format in ['mp3', 'aac', 'opus']:
+                if self.format in ['mp3', 'aac']:
                     self.stream.bit_rate = 128000
+                elif self.format == 'opus':
+                    # See https://wiki.xiph.org/Opus_Recommended_Settings
+                    self.stream.bit_rate = 96000
         else:
             raise ValueError(f"Unsupported format: {self.format}") # Use self.format here
 
@@ -80,13 +83,14 @@ class StreamingAudioWriter:
                 for packet in packets:
                     self.container.mux(packet)
 
-                # Closing the container handles writing the trailer and finalizing the file.
-                # No explicit flush method is available or needed here.
+                # Closing the container updates the output_buffer with any trailing data the codec may produce.
+                # Without this, the buffer would be incomplete if using opus+ogg.
+                self.container.close()
+
                 logger.debug("Muxed final packets.")
 
-                # Get the final bytes from the buffer *before* closing it
                 data = self.output_buffer.getvalue()
-                self.close() # Close container and buffer
+                self.output_buffer.close()
                 return data
 
         if audio_data is None or len(audio_data) == 0:
